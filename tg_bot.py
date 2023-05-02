@@ -1,10 +1,10 @@
 import logging
-import sqlite3
 import os
+import sqlite3
 
-from telegram import Bot, ReplyKeyboardMarkup, TelegramError
 from dotenv import load_dotenv
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import Bot, ReplyKeyboardMarkup, TelegramError
+from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 
 load_dotenv()
 
