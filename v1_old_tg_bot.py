@@ -1,12 +1,10 @@
 import logging
 import os
+import sqlite3
 
 from dotenv import load_dotenv
 from telegram import Bot, ReplyKeyboardMarkup, TelegramError
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
-from sqlalchemy import select, or_
-
-from db import Question, session
 
 load_dotenv()
 
@@ -16,17 +14,13 @@ bot = Bot(secret_token)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.DEBUG
+    level=logging.INFO
 )
 
 logger = logging.getLogger(__name__)
 
 
 def start(update, context):
-    """
-    При старте бота отправляет сообщение в чат с заданным текстом,
-    отобразив пользовательскую клавиатуру с опциями "Готовые вопросы" и "Отправить свой вопрос".
-    """
     keyboard = [["Готовые вопросы"], ["Отправить свой вопрос"]]
 
     reply_markup = ReplyKeyboardMarkup(
@@ -43,9 +37,6 @@ def start(update, context):
 
 
 def help(update, context):
-    """
-    Отправляет сообщение для команды /help.
-    """
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Я могу помочь тебе найти ответ на вопрос. "
@@ -53,8 +44,11 @@ def help(update, context):
 
 
 def faq(update, context):
-    questions = session.execute(select(Question.question)).fetchall()
-    session.close()
+    conn = sqlite3.connect('faq.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT question FROM faq")
+    questions = [row[0] for row in cursor.fetchall()]
+    conn.close()
 
     keyboard = [[question] for question in questions]
 
@@ -69,7 +63,7 @@ def faq(update, context):
             reply_markup=reply_markup
         )
     except TelegramError as e:
-        print(f"При отправке сообщения произошла ошибка: {e}")
+        print(f"An error occurred while sending a message: {e}")
 
 
 def echo(update, context):
@@ -85,14 +79,23 @@ def echo(update, context):
     else:
         question = message_text
 
-        result = session.query(Question.answer).filter(Question.question == question).first()
+        conn = sqlite3.connect('faq.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT answer FROM faq WHERE question=?", (question,))
+        result = cursor.fetchone()
+        conn.close()
 
         if not result:
+            conn = sqlite3.connect('faq.db')
+            cursor = conn.cursor()
             keywords = question.lower().split()
-            query = session.query(Question.answer).filter(
-                or_(*[Question.question.ilike(f'%{keyword}%') for keyword in keywords])
-            ).first()
-            result = query
+            query = "SELECT answer FROM faq WHERE "
+            for keyword in keywords:
+                query += f"LOWER(question) LIKE '%{keyword}%' OR "
+            query = query[:-4]
+            cursor.execute(query)
+            result = cursor.fetchone()
+            conn.close()
 
         if result:
             context.bot.send_message(
