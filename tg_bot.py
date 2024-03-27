@@ -6,7 +6,7 @@ from telegram import Bot, ReplyKeyboardMarkup, TelegramError
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 from sqlalchemy import select, or_
 
-from db import Question, session
+from model.db import Question, session
 
 load_dotenv()
 

@@ -14,7 +14,7 @@ bot = Bot(secret_token)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.DEBUG
 )
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,9 @@ def start(update, context):
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Привет! Я бот-ассистент. "
-        "Я могу помочь тебе найти ответ на вопрос. "
-        "Выбери 'Готовые вопросы' или напиши мне свой вопрос.",
+        text='Привет! Я бот-ассистент. '
+        'Я могу помочь тебе найти ответ на вопрос. '
+        'Выбери "Готовые вопросы" или напиши мне свой вопрос.',
         reply_markup=reply_markup
     )
 
@@ -39,14 +39,14 @@ def start(update, context):
 def help(update, context):
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Я могу помочь тебе найти ответ на вопрос. "
-        "Просто напиши мне свой вопрос.")
+        text='Я могу помочь тебе найти ответ на вопрос. '
+        'Просто напиши мне свой вопрос.')
 
 
 def faq(update, context):
     conn = sqlite3.connect('faq.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT question FROM faq")
+    cursor.execute('SELECT question FROM faq')
     questions = [row[0] for row in cursor.fetchall()]
     conn.close()
 
@@ -59,29 +59,29 @@ def faq(update, context):
     try:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Выберите вопрос:",
+            text='Выберите вопрос:',
             reply_markup=reply_markup
         )
     except TelegramError as e:
-        print(f"An error occurred while sending a message: {e}")
+        print(f'An error occurred while sending a message: {e}')
 
 
 def echo(update, context):
     message_text = update.message.text
 
-    if message_text == "Готовые вопросы":
+    if message_text == 'Готовые вопросы':
         faq(update, context)
-    elif message_text == "Напиши свой вопрос":
+    elif message_text == 'Напиши свой вопрос':
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Введите ваш вопрос:"
+            text='Введите ваш вопрос:'
         )
     else:
         question = message_text
 
         conn = sqlite3.connect('faq.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT answer FROM faq WHERE question=?", (question,))
+        cursor.execute('SELECT answer FROM faq WHERE question=?', (question,))
         result = cursor.fetchone()
         conn.close()
 
@@ -89,9 +89,9 @@ def echo(update, context):
             conn = sqlite3.connect('faq.db')
             cursor = conn.cursor()
             keywords = question.lower().split()
-            query = "SELECT answer FROM faq WHERE "
+            query = 'SELECT answer FROM faq WHERE '
             for keyword in keywords:
-                query += f"LOWER(question) LIKE '%{keyword}%' OR "
+                query += f'LOWER(question) LIKE "%{keyword}%" OR '
             query = query[:-4]
             cursor.execute(query)
             result = cursor.fetchone()
@@ -104,9 +104,9 @@ def echo(update, context):
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Я не знаю ответа на этот вопрос. "
-                "Я переадресую его специалисту и он свяжется "
-                "с вами в ближайшее время.")
+                text='Я не знаю ответа на этот вопрос. '
+                'Я переадресую его специалисту и он свяжется '
+                'с вами в ближайшее время.')
             context.bot.forward_message(
                 chat_id=operator_chat_id,
                 from_chat_id=update.effective_chat.id,

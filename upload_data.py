@@ -1,6 +1,6 @@
 import csv
 
-from db import Question, session
+from model.db import Question, session
 
 
 with open('data.csv', 'r') as file:
